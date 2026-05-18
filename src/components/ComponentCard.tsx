@@ -58,6 +58,11 @@ export default function ComponentCard({
     return 'text-emerald-700 font-extrabold';
   };
 
+  const renderTime = (remainingHours: number, startTimeMs: number | null | undefined, prefix: string) => {
+    if (startTimeMs) return `${prefix}: ${getFutureTimestampDisplay(remainingHours)}`;
+    return `Kalan: ${Number(remainingHours).toFixed(2)} Saat (Beklemede)`;
+  };
+
   return (
     <div className={`rounded-xl border-l-4 shadow-sm transition-all duration-300 ${isConsumed ? 'bg-slate-50 border-l-slate-300 opacity-60 grayscale' : statusCfg.color.split(' ')[1]} ${isErrorComponent ? 'border-l-[6px] border-red-500 shadow-red-100 shadow-md ring-1 ring-red-100' : ''} ${isExpanded ? 'ring-2 ring-blue-300' : ''}`}>
       <div 
@@ -81,8 +86,8 @@ export default function ComponentCard({
                   <span className="text-xs text-slate-500 font-medium">{comp.solderModel} ({comp.solderType})</span>
                   <span className="text-slate-300">•</span>
                   <span className={`flex items-center gap-1 text-xs font-bold ${isErrorComponent ? 'text-red-600' : (comp.status === 'IN_PRODUCTION' && !comp.isReady ? 'text-amber-600' : 'text-slate-600')}`}>
-                    {comp.status === 'IN_PRODUCTION' && !comp.isReady ? <><Timer className="w-3 h-3" /> Hazır Olacağı Zaman: {getFutureTimestampDisplay(comp.targetTime! - comp.elapsedTime!)}</> : 
-                     comp.status === 'IN_PRODUCTION' && comp.isReady ? <><Clock className="w-3 h-3" /> Son Kullanım: {getFutureTimestampDisplay(floorRemainingHours)}</> :
+                    {comp.status === 'IN_PRODUCTION' && !comp.isReady ? <><Timer className="w-3 h-3" /> {renderTime(comp.targetTime! - comp.elapsedTime!, comp.bakeStartTimeMs, 'Hazır Olacağı Zaman')}</> : 
+                     comp.status === 'IN_PRODUCTION' && comp.isReady ? <><Clock className="w-3 h-3" /> {renderTime(floorRemainingHours, comp.floorLifeStartTimeMs, 'Son Kullanım')}</> :
                      <><Calendar className="w-3 h-3" /> SKT: {comp.expiryDate}</>}
                   </span>
                 </>
@@ -91,10 +96,10 @@ export default function ComponentCard({
                   <span className="text-xs text-slate-500 font-medium">MSL {comp.msl}</span>
                   <span className="text-slate-300">•</span>
                   <span className={`flex items-center gap-1 text-xs font-bold ${isErrorComponent ? 'text-red-600' : (comp.status === 'BAKING' ? 'text-amber-600' : 'text-slate-600')}`}>
-                    {comp.status === 'BAKING' ? <><Timer className="w-3 h-3" /> Fırından Çıkış Zamanı: {getFutureTimestampDisplay(comp.targetTime! - comp.elapsedTime!)}</> : 
-                     comp.status === 'PACKAGED' ? <><Calendar className="w-3 h-3" /> MBB SKT: {getFutureTimestampDisplay(shelfRemainingHours)}</> : 
+                    {comp.status === 'BAKING' ? <><Timer className="w-3 h-3" /> {renderTime(comp.targetTime! - comp.elapsedTime!, comp.bakeStartTimeMs, 'Fırından Çıkış Zamanı')}</> : 
+                     comp.status === 'PACKAGED' ? <><Calendar className="w-3 h-3" /> {renderTime(shelfRemainingHours, comp.shelfLifeStartTimeMs, 'MBB SKT')}</> : 
                      (comp.status === 'DRY_CABINET' || comp.status === 'EXPIRED_IN_DRY_CABINET') ? <><Archive className="w-3 h-3" /> Nem Dolabında (Donduruldu)</> :
-                     <><Clock className="w-3 h-3" /> Ömür Dolum Zamanı: {getFutureTimestampDisplay(floorRemainingHours)}</>}
+                     <><Clock className="w-3 h-3" /> {renderTime(floorRemainingHours, comp.floorLifeStartTimeMs, 'Ömür Dolum Zamanı')}</>}
                   </span>
                 </>
               )}
@@ -225,7 +230,7 @@ export default function ComponentCard({
                            <span className="font-bold text-xs">{!comp.isReady ? `${bakeProgress.toFixed(1)}%` : `${floorRemainingPercent.toFixed(1)}%`} ({!comp.isReady ? Number(comp.elapsedTime).toFixed(2) + '/' + Number(comp.targetTime).toFixed(2) : Number(comp.floorLifeElapsed).toFixed(2) + '/' + Number(comp.floorLifeTotal).toFixed(2)} S)</span>
                          </div>
                          <span className={`block font-black text-lg ${!comp.isReady ? getStatusColor(comp.targetTime! - comp.elapsedTime!, 1) : getStatusColor(floorRemainingHours, 1)}`}>
-                            {!comp.isReady ? `Kullanıma Hazır Olacağı Zaman: ${getFutureTimestampDisplay(comp.targetTime! - comp.elapsedTime!)}` : `Son Kullanım: ${getFutureTimestampDisplay(floorRemainingHours)}`}
+                            {!comp.isReady ? renderTime(comp.targetTime! - comp.elapsedTime!, comp.bakeStartTimeMs, 'Kullanıma Hazır Olacağı Zaman') : renderTime(floorRemainingHours, comp.floorLifeStartTimeMs, 'Son Kullanım')}
                          </span>
                        </div>
                      </div>
@@ -248,7 +253,7 @@ export default function ComponentCard({
                        <span className="block text-xs uppercase tracking-wider font-bold opacity-70">Raf Ömrü Devam Ediyor</span>
                        <span className="font-bold text-xs">{shelfRemainingPercent.toFixed(1)}% ({Number(comp.shelfLifeElapsed).toFixed(2)}/{Number(comp.shelfLifeTotal).toFixed(2)} S)</span>
                      </div>
-                     <span className={`block font-black text-lg ${getStatusColor(shelfRemainingHours, 168)}`}>MBB SKT: {getFutureTimestampDisplay(shelfRemainingHours)}</span>
+                     <span className={`block font-black text-lg ${getStatusColor(shelfRemainingHours, 168)}`}>{renderTime(shelfRemainingHours, comp.shelfLifeStartTimeMs, 'MBB SKT')}</span>
                   </div>
                 </div>
                 <div className="w-full bg-blue-200/50 rounded-full h-2">
@@ -265,7 +270,7 @@ export default function ComponentCard({
                        <span className="font-bold text-xs">{floorRemainingPercent.toFixed(1)}% ({Number(comp.floorLifeElapsed).toFixed(2)}/{Number(comp.floorLifeTotal).toFixed(2)} S)</span>
                      </div>
                      <span className={`block py-0.5 font-black text-lg flex items-center gap-2 ${getStatusColor(floorRemainingHours, 4)}`}>
-                        Ömür Dolum Zamanı: {getFutureTimestampDisplay(floorRemainingHours)}
+                        {renderTime(floorRemainingHours, comp.floorLifeStartTimeMs, 'Ömür Dolum Zamanı')}
                         {comp.status === 'DRY_CABINET' && <span className="text-[10px] bg-cyan-100 px-2 py-0.5 rounded-full border border-cyan-300 font-extrabold ml-1 text-cyan-800 tracking-wider">DONDURULDU</span>}
                      </span>
                   </div>
@@ -284,7 +289,7 @@ export default function ComponentCard({
                        <span className="font-bold text-xs">{bakeProgress.toFixed(1)}% ({Number(comp.elapsedTime).toFixed(2)}/{Number(comp.targetTime).toFixed(2)} S)</span>
                      </div>
                      <span className={`block font-black text-lg ${getStatusColor(comp.targetTime! - comp.elapsedTime!, 1)}`}>
-                        Fırından Çıkış Zamanı: {getFutureTimestampDisplay(comp.targetTime! - comp.elapsedTime!)}
+                        {renderTime(comp.targetTime! - comp.elapsedTime!, comp.bakeStartTimeMs, 'Fırından Çıkış Zamanı')}
                      </span>
                   </div>
                 </div>

@@ -25,6 +25,7 @@ if (!fs.existsSync(LOGS_DIR)) {
 }
 
 const db = new Database(DB_FILE);
+db.pragma('journal_mode = WAL');
 
 // Tabloyu oluştur (eğer yoksa)
 db.exec(`
@@ -237,6 +238,7 @@ setInterval(() => {
   const components = loadAllComponents();
 
   components.forEach(comp => {
+    if (comp.status === 'CONSUMED') return;
     let compChanged = false;
 
     if (comp.status === 'BAKING' && comp.bakeStartTimeMs) {
